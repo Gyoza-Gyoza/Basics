@@ -19,10 +19,10 @@ public enum KeyInput //Contains all available inputs
     Right,
     Jump
 }
-public class KeyBindManager : MonoBehaviour
+public class InputManager : MonoBehaviour
 {
     private string fileName = "Keybinds";
-    public static KeyBindManager Instance;
+    public static InputManager Instance;
 
     private bool setKeyBindingMode = false;
     private KeyInputSelector chosenKeyBinding;

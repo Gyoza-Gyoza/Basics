@@ -56,8 +56,8 @@ public class KeyInputSelector : MonoBehaviour
     }
     private void InitializeSelector()
     {
-        KeyBindManager.Instance.GetSelectorReference(this);
-        KeyCode = KeyBindManager.Instance.Keys[keyInput];
+        InputManager.Instance.GetSelectorReference(this);
+        KeyCode = InputManager.Instance.Keys[keyInput];
     }
     /// <summary>
     /// Start key binding mode, for use with Unity Buttons
@@ -75,7 +75,7 @@ public class KeyInputSelector : MonoBehaviour
     /// <returns></returns>
     private bool IsKeycodeAvailable(KeyCode keycodeToCheck)
     {
-        foreach(var kvp in KeyBindManager.Instance.Keys)
+        foreach(var kvp in InputManager.Instance.Keys)
         {
             if (keycodeToCheck == kvp.Value)
             {
