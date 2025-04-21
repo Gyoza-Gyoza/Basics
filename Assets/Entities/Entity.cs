@@ -21,7 +21,7 @@ public abstract class Entity : MonoBehaviour
         { 
             if (value > health)
             {
-                if (health > maxHealth) health = maxHealth;
+                if (value > maxHealth) health = maxHealth;
                 else
                 {
                     health = value;
