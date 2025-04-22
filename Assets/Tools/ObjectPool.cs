@@ -11,15 +11,14 @@ public abstract class ObjectPool : MonoBehaviour
 
     protected Stack<GameObject> objectPool = new Stack<GameObject>(); // Stack to contain the object
 
-    public virtual GameObject GetObject(Vector3 location) // Function to get the object
+    public virtual GameObject GetObject() // Function to get the object
     {
         objectPool.TryPop(out GameObject obj); // Attempt to get the object
 
-        if (obj == null) return Instantiate(objectPrefab, location, Quaternion.identity); // Instantiate a new object if it doesn't exist in the stack 
+        if (obj == null) return Instantiate(objectPrefab); // Instantiate a new object if it doesn't exist in the stack 
         else
         {
             obj.SetActive(true);
-            obj.transform.position = location;
             return obj; // Returns the object from the stack
         }
     }
