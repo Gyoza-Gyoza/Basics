@@ -50,10 +50,6 @@ public class InputManager : MonoBehaviour
         //Else exports a new copy 
         else DatabaseIO.ExportDatabase(fileName, ExportKeyBinds());
     }
-    private void Start()
-    {
-
-    }
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.P))

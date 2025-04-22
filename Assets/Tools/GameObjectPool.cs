@@ -4,7 +4,7 @@ using UnityEngine;
 
 // This script manages an object pool to reuse GameObjects instead of creating and destroying them frequently.
 // Use GetObject() to spawn an object at a location, and DestroyObject() to return it to the pool for reuse.
-public abstract class ObjectPool : MonoBehaviour
+public abstract class GameObjectPool : MonoBehaviour
 {
     [SerializeField]
     protected GameObject objectPrefab; // Object to spawn

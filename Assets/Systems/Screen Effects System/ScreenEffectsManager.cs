@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static UnityEngine.GraphicsBuffer;
 
-public class ScreenEffectsManager : ObjectPool
+public class ScreenEffectsManager : GameObjectPool
 {
     public static ScreenEffectsManager Instance;
 
@@ -14,9 +15,12 @@ public class ScreenEffectsManager : ObjectPool
     private TextMeshProUGUI notification;
     [SerializeField]
     private Transform quickNotifications;
+
+    private TimerManager timerManager;
     private void Awake()
     {
         if (Instance == null) Instance = this;
+        timerManager = TimerManager.Instance;
     }
     private void Start()
     {
@@ -67,7 +71,8 @@ public class ScreenEffectsManager : ObjectPool
         textNotification.GetComponentInChildren<TextMeshProUGUI>().text = notificationText;
         textNotification.transform.SetParent(quickNotifications, false);
 
-        StartCoroutine(QuickTextCoroutine(textNotification, fadeInDuration, fadeOutDuration, holdDuration));
+        StartCoroutine(FadeCoroutine(textNotification.GetComponent<CanvasGroup>(), fadeInDuration, fadeOutDuration, holdDuration));
+        timerManager.CreateTimedAction(fadeInDuration + fadeOutDuration + holdDuration, () => DestroyObject(textNotification));
     }
 
     private IEnumerator FadeCoroutine(Graphic target, float fadeInDuration, float fadeOutDuration, float holdDuration)
