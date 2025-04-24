@@ -13,18 +13,18 @@ public abstract class GameObjectPool : MonoBehaviour
 
     public virtual GameObject GetObject() // Function to get the object
     {
-        objectPool.TryPop(out GameObject obj); // Attempt to get the object
-
-        if (obj == null) return Instantiate(objectPrefab); // Instantiate a new object if it doesn't exist in the stack 
-        else
+        if(objectPool.Count > 0) // Check if there are any objects in the stack
         {
-            obj.SetActive(true);
-            return obj; // Returns the object from the stack
+            GameObject obj = objectPool.Pop(); // Get the object from the stack
+
+            obj.SetActive(true); // Set the object to active
+            return obj; // Return the object
         }
+        else return Instantiate(objectPrefab); // Instantiate a new object if it doesn't exist in the stack 
     }
-    public virtual void DestroyObject(GameObject objectToDestroy) // Function to destroy objects
+    public virtual void ReturnObject(GameObject obj) // Function to destroy objects
     {
-        objectPool.Push(objectToDestroy); // Places object back into stack 
-        objectToDestroy.SetActive(false);
+        objectPool.Push(obj); // Places object back into stack 
+        obj.SetActive(false);
     }
 }

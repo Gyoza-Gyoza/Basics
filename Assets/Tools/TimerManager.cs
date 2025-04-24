@@ -1,16 +1,13 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class TimerManager : MonoBehaviour
 {
     public static TimerManager Instance;
-    private List<TimedTask> timedTasks = new List<TimedTask>();
-    public List<TimedTask> TimedTasks
-    { get { return timedTasks; } }
+    private List<Task> tasks = new List<Task>();
+    public List<Task> Tasks
+    { get { return tasks; } }
 
     private void Awake()
     {
@@ -19,13 +16,13 @@ public class TimerManager : MonoBehaviour
     }
     private void Update()
     {
-        for (int i = timedTasks.Count - 1; i >= 0; i--)
+        //Reverse for loop to avoid index issues when removing items from the list
+        for (int i = tasks.Count - 1; i >= 0; i--)
         {
-            if (timedTasks[i].IsActive) timedTasks[i].Tick();
-            else timedTasks.RemoveAt(i);
+            if (tasks[i].IsActive) tasks[i].Tick(); //Calls the tick function of the task
+            else tasks.RemoveAt(i); //Removes the task from the list if it is inactive
         }
     }
-    #region Object Pooling
     /// <summary>
     /// Initializes a new timed action
     /// </summary>
@@ -34,41 +31,62 @@ public class TimerManager : MonoBehaviour
     /// <returns></returns>
     public void CreateTimedAction(float duration, Action onComplete)
     {
-        timedTasks.Add(TimedAction.Get(duration, onComplete));
+        tasks.Add(TimedAction.Get(duration, onComplete));
     }
 
     /// <summary>
-    /// Get a timed routine from the pool
+    /// Initializes a new timed routine
     /// </summary>
     /// <param name="duration">Duration of the routine being performed</param>
     /// <param name="routine">Action that will be performed over the duration of the routine</param>
     /// <returns></returns>
     public void CreateTimedRoutine(float duration, Action routine)
     {
-        timedTasks.Add(TimedRoutine.Get(duration, routine));
+        tasks.Add(TimedRoutine.Get(duration, routine));
     }
-    #endregion
+
+    /// <summary>
+    /// Initializes a new task sequence
+    /// </summary>
+    /// <param name="sequence">List of tasks to be performed</param>
+    /// <returns></returns>
+    public void CreateTaskSequence(Task[] sequence)
+    {
+        tasks.Add(new TaskSequence(sequence));
+    }
 }
 
-public abstract class TimedTask
+public abstract class Task
 {
-    public float Duration;
-    public float ElapsedTime;
-    public bool IsActive;
+    public bool IsActive; //Whether the task is active or not
+    public Task()
+    {
+        IsActive = true;
+    }
+    //Creates a common function that will be called each frame in the update loop
+    public abstract void Tick();
+}
+public abstract class TimedTask : Task
+{
+    public float Duration; //Duration of the task
+    public float ElapsedTime; //Current time elapsed
 
     public TimedTask(float duration)
     {
         Duration = duration;
         ElapsedTime = 0f;
-        IsActive = true;
     }
-    public abstract void Tick();
 }
+
+/// <summary>
+/// Performs an action after a certain amount of time. Use Get function to get a new instance of the class.
+/// </summary>
 public class TimedAction : TimedTask
 {
     private static Stack<TimedAction> timedActions = new Stack<TimedAction>();
 
     public Action OnComplete;
+
     private TimedAction(float duration, Action onComplete) : base(duration)
     {
         OnComplete = onComplete;
@@ -110,6 +128,10 @@ public class TimedAction : TimedTask
         }
     }
 }
+
+/// <summary>
+/// Performs actions over a certain amount of time. Use Get function to get a new instance of the class.
+/// </summary>
 public class TimedRoutine : TimedTask
 {
     private static Stack<TimedRoutine> timedRoutines = new Stack<TimedRoutine>();
@@ -154,5 +176,119 @@ public class TimedRoutine : TimedTask
             IsActive = false;
             Return();
         }
+    }
+}
+
+/// <summary>
+/// Performs a sequence of tasks
+/// </summary>
+public class TaskSequence : Task
+{
+    private Queue<Task> taskQueue = new Queue<Task>();
+
+    public bool IsComplete
+    { get { return taskQueue.Count == 0; } }
+
+    public TaskSequence(Task[] sequence) : base()
+    {
+        foreach (Task task in sequence)
+        {
+            taskQueue.Enqueue(task);
+        }
+        IsActive = true;
+    }
+
+    public void AddTask(TimedTask task) => taskQueue.Enqueue(task);
+    public override void Tick()
+    {
+        if(taskQueue.Count > 0)
+        {
+            Task currentTask = taskQueue.Peek();
+
+            if(currentTask == null)
+            {
+                taskQueue.Dequeue();
+                return;
+            }
+
+            currentTask.Tick();
+
+            if (currentTask.IsActive == false)
+            {
+                taskQueue.Dequeue();
+                if (taskQueue.Count == 0) IsActive = false;
+            }
+        }
+    }
+}
+
+/// <summary>
+/// Waits for a certain amount of time. Use Get function to get a new instance of the class.
+/// </summary>
+public class Wait : TimedTask
+{
+    private static Stack<Wait> waits = new Stack<Wait>();
+
+    private Wait(float duration) : base(duration)
+    {
+
+    }
+    public static Wait Get(float duration)
+    {
+        if (waits.Count > 0) //Checks if there are objects in the pool 
+        {
+            Wait result = waits.Pop();
+            result.Duration = duration;
+            result.ElapsedTime = 0f;
+            result.IsActive = true;
+            return result;
+        }
+        else return new Wait(duration);
+    }
+    public override void Tick()
+    {
+        ElapsedTime += Time.deltaTime;
+        if (ElapsedTime >= Duration)
+        {
+            IsActive = false;
+        }
+    }
+    public void Return()
+    {
+        waits.Push(this);
+    }
+}
+
+/// <summary>
+/// Performs an action instantly. Use Get function to get a new instance of the class.
+/// </summary>
+public class InstantTask : Task
+{
+    private static Stack<InstantTask> instantTasks = new Stack<InstantTask>();
+    public Action OnComplete;
+    public InstantTask(Action task)
+    {
+        OnComplete = task;
+    }
+    public override void Tick()
+    {
+        OnComplete?.Invoke();
+        IsActive = false;
+    }
+    public static InstantTask Get(Action task)
+    {
+        if (instantTasks.Count > 0) //Checks if there are objects in the pool 
+        {
+            InstantTask result = instantTasks.Pop();
+            result.IsActive = true;
+            result.OnComplete = task;
+            return result;
+        }
+        else return new InstantTask(task);
+    }
+    public void Return()
+    {
+        IsActive = false;
+        instantTasks.Push(this);
     }
 }
