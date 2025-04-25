@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.UI;
 using static UnityEngine.GraphicsBuffer;
@@ -71,6 +70,7 @@ public class ScreenEffectsManager : GameObjectPool
         textNotification.GetComponentInChildren<Image>().sprite = icon; 
         textNotification.GetComponentInChildren<TextMeshProUGUI>().text = notificationText;
         textNotification.transform.SetParent(quickNotifications, false);
+        textNotification.transform.SetAsLastSibling();
 
         CanvasGroup canvasGroup = textNotification.GetComponent<CanvasGroup>();
 
@@ -111,7 +111,7 @@ public class ScreenEffectsManager : GameObjectPool
     {
         timerManager.Tasks.Add(CreateFadeRoutine(target, fadeInDuration, fadeOutDuration, fadeIn));
     }
-    private TimedRoutine CreateFadeRoutine(Graphic target, float fadeInDuration, float fadeOutDuration, bool fadeIn)
+    private RoutineTask CreateFadeRoutine(Graphic target, float fadeInDuration, float fadeOutDuration, bool fadeIn)
     {
         float timer = 0f;
 
@@ -126,10 +126,10 @@ public class ScreenEffectsManager : GameObjectPool
                     target.color.g,
                     target.color.b,
                     endAlpha);
-            return TimedRoutine.Get(0f, null);
+            return RoutineTask.Get(0f, null);
         }
 
-        return TimedRoutine.Get(duration, () =>
+        return RoutineTask.Get(duration, () =>
         {
             if (timer <= duration)
             {
@@ -156,7 +156,7 @@ public class ScreenEffectsManager : GameObjectPool
     {
         timerManager.Tasks.Add(CreateFadeRoutine(target, fadeInDuration, fadeOutDuration, fadeIn));
     }
-    private TimedRoutine CreateFadeRoutine(CanvasGroup target, float fadeInDuration, float fadeOutDuration, bool fadeIn)
+    private RoutineTask CreateFadeRoutine(CanvasGroup target, float fadeInDuration, float fadeOutDuration, bool fadeIn)
     {
         float startAlpha = fadeIn ? 0f : 1f;
         float endAlpha = fadeIn ? 1f : 0f;
@@ -165,12 +165,12 @@ public class ScreenEffectsManager : GameObjectPool
         if (duration <= 0f) //Prevent lerp issues when dividing by 0
         {
             target.alpha = endAlpha;
-            return TimedRoutine.Get(0f, null);
+            return RoutineTask.Get(0f, null);
         }
 
         float timer = 0f;
 
-        return TimedRoutine.Get(duration, () =>
+        return RoutineTask.Get(duration, () =>
         {
             if (timer <= duration)
             {

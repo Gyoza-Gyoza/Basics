@@ -31,7 +31,7 @@ public class TimerManager : MonoBehaviour
     /// <returns></returns>
     public void CreateTimedAction(float duration, Action onComplete)
     {
-        tasks.Add(TimedAction.Get(duration, onComplete));
+        tasks.Add(TimedTask.Get(duration, onComplete));
     }
 
     /// <summary>
@@ -42,7 +42,7 @@ public class TimerManager : MonoBehaviour
     /// <returns></returns>
     public void CreateTimedRoutine(float duration, Action routine)
     {
-        tasks.Add(TimedRoutine.Get(duration, routine));
+        tasks.Add(RoutineTask.Get(duration, routine));
     }
 
     /// <summary>
@@ -66,29 +66,19 @@ public abstract class Task
     //Creates a common function that will be called each frame in the update loop
     public abstract void Tick();
 }
-public abstract class TimedTask : Task
+
+public class TimedTask : Task
 {
+    private static Stack<TimedTask> timedActions = new Stack<TimedTask>();
+
     public float Duration; //Duration of the task
     public float ElapsedTime; //Current time elapsed
+    public Action OnComplete;
 
-    public TimedTask(float duration)
+    private TimedTask(float duration, Action onComplete)
     {
         Duration = duration;
         ElapsedTime = 0f;
-    }
-}
-
-/// <summary>
-/// Performs an action after a certain amount of time. Use Get function to get a new instance of the class.
-/// </summary>
-public class TimedAction : TimedTask
-{
-    private static Stack<TimedAction> timedActions = new Stack<TimedAction>();
-
-    public Action OnComplete;
-
-    private TimedAction(float duration, Action onComplete) : base(duration)
-    {
         OnComplete = onComplete;
     }
 
@@ -98,11 +88,11 @@ public class TimedAction : TimedTask
     /// <param name="duration">Duration before action will be performed</param>
     /// <param name="onComplete">Action that will be performed after duration has passed</param>
     /// <returns></returns>
-    public static TimedAction Get(float duration, Action onComplete)
+    public static TimedTask Get(float duration, Action onComplete)
     {
         if (timedActions.Count > 0) //Checks if there are objects in the pool 
         {
-            TimedAction result = timedActions.Pop();
+            TimedTask result = timedActions.Pop();
 
             result.Duration = duration;
             result.ElapsedTime = 0f;
@@ -111,7 +101,7 @@ public class TimedAction : TimedTask
 
             return result;
         }
-        else return new TimedAction(duration, onComplete);
+        else return new TimedTask(duration, onComplete);
     }
     public void Return()
     {
@@ -132,13 +122,17 @@ public class TimedAction : TimedTask
 /// <summary>
 /// Performs actions over a certain amount of time. Use Get function to get a new instance of the class.
 /// </summary>
-public class TimedRoutine : TimedTask
+public class RoutineTask : Task
 {
-    private static Stack<TimedRoutine> timedRoutines = new Stack<TimedRoutine>();
+    private static Stack<RoutineTask> timedRoutines = new Stack<RoutineTask>();
 
+    public float Duration; //Duration of the task
+    public float ElapsedTime; //Current time elapsed
     public Action Routine;
-    private TimedRoutine(float duration, Action routine) : base(duration) 
+    private RoutineTask(float duration, Action routine)
     {
+        Duration = duration;
+        ElapsedTime = 0f;
         Routine = routine;
     }
 
@@ -148,11 +142,11 @@ public class TimedRoutine : TimedTask
     /// <param name="duration">Duration of the routine being performed</param>
     /// <param name="onComplete">Action that will be performed over the duration of the routine</param>
     /// <returns></returns>
-    public static TimedRoutine Get(float duration, Action routine)
+    public static RoutineTask Get(float duration, Action routine)
     {
         if (timedRoutines.Count > 0) //Checks if there are objects in the pool 
         {
-            TimedRoutine result = timedRoutines.Pop();
+            RoutineTask result = timedRoutines.Pop();
 
             result.Duration = duration;
             result.ElapsedTime = 0f;
@@ -161,7 +155,7 @@ public class TimedRoutine : TimedTask
 
             return result;
         }
-        else return new TimedRoutine(duration, routine);
+        else return new RoutineTask(duration, routine);
     }
     public void Return()
     {
@@ -225,13 +219,16 @@ public class TaskSequence : Task
 /// <summary>
 /// Waits for a certain amount of time. Use Get function to get a new instance of the class.
 /// </summary>
-public class Wait : TimedTask
+public class Wait : Task
 {
     private static Stack<Wait> waits = new Stack<Wait>();
 
-    private Wait(float duration) : base(duration)
+    public float Duration; //Duration of the task
+    public float ElapsedTime; //Current time elapsed
+    private Wait(float duration)
     {
-
+        Duration = duration;
+        ElapsedTime = 0f;
     }
     public static Wait Get(float duration)
     {
