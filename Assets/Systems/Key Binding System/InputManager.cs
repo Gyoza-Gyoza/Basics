@@ -24,10 +24,9 @@ public class InputManager : MonoBehaviour
     private string fileName = "Keybinds";
     public static InputManager Instance;
 
-    private bool setKeyBindingMode = false;
-    private KeyInputSelector chosenKeyBinding;
-
     private List<KeyInputSelector> keyInputSelectors = new List<KeyInputSelector>();
+    public List<KeyInputSelector> KeyInputSelectors
+    {  get { return keyInputSelectors; } }
 
     //Contains the available inputs with their respective keybinds 
     private Dictionary<KeyInput, KeyCode> keys = new Dictionary<KeyInput, KeyCode>()
@@ -95,16 +94,6 @@ public class InputManager : MonoBehaviour
     /// <param name="keyInputSelector">KeyInputSelector class reference</param>
     public void GetSelectorReference(KeyInputSelector keyInputSelector) => keyInputSelectors.Add(keyInputSelector);
     public KeyCode GetKey(KeyInput key) => keys[key];
-
-    /// <summary>
-    /// Use this function to set key bindings for specific actions, use together with the KeyInputSelector script on the button to select which input it controls
-    /// </summary>
-    /// <param name="input"></param>
-    public void StartSetKeybindMode(KeyInputSelector key)
-    {
-        chosenKeyBinding = key;
-        setKeyBindingMode = true;
-    }
 
     /// <summary>
     /// Goes through the list of key input selectors and sets the key bindings to the new keycodes

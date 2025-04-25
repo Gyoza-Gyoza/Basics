@@ -48,6 +48,7 @@ public class KeyInputSelector : MonoBehaviour
                     {
                         KeyCode = keyCode;
                         setKeyBindMode = false;
+                        ScreenEffectsManager.Instance.CreateTitleTextNotification("Key already in use");
                         break;
                     }
                 }
@@ -75,9 +76,9 @@ public class KeyInputSelector : MonoBehaviour
     /// <returns></returns>
     private bool IsKeycodeAvailable(KeyCode keycodeToCheck)
     {
-        foreach(var kvp in InputManager.Instance.Keys)
+        foreach(KeyInputSelector keyInputSelector in InputManager.Instance.KeyInputSelectors)
         {
-            if (keycodeToCheck == kvp.Value)
+            if (keycodeToCheck == keyInputSelector.KeyCode)
             {
                 return false;
             }

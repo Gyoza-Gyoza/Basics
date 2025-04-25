@@ -53,6 +53,9 @@ public class TimerManager : MonoBehaviour
     public void CreateTaskSequence(Task[] sequence)
     {
         tasks.Add(new TaskSequence(sequence));
+    }public void CreateTaskSequence(TaskSequence sequence)
+    {
+        tasks.Add(sequence);
     }
 }
 
@@ -183,6 +186,11 @@ public class TaskSequence : Task
     public bool IsComplete
     { get { return taskQueue.Count == 0; } }
 
+    public TaskSequence(Task sequence) : base()
+    {
+        taskQueue.Enqueue(sequence);
+        IsActive = true;
+    }
     public TaskSequence(Task[] sequence) : base()
     {
         foreach (Task task in sequence)
@@ -192,7 +200,11 @@ public class TaskSequence : Task
         IsActive = true;
     }
 
-    public void AddTask(TimedTask task) => taskQueue.Enqueue(task);
+    public void AddTask(Task task) => taskQueue.Enqueue(task);
+    public void AddTask(Task[] task)
+    {
+        foreach (Task t in task) taskQueue.Enqueue(t);
+    }
     public override void Tick()
     {
         if(taskQueue.Count > 0)

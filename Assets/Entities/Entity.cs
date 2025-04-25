@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 // Abstract base class for all entities in the game.
@@ -52,7 +50,7 @@ public abstract class Entity : MonoBehaviour
     }
 
     [SerializeField]
-    private float initialMovementSpeed;
+    private float initialMovementSpeed = 5f;
     private float movementSpeed;
 
     // Property used by other scripts to interact with the Entity's Movement Speed value
@@ -69,6 +67,7 @@ public abstract class Entity : MonoBehaviour
         Health = maxHealth;
         Damage = initialDamage;
         MovementSpeed = initialMovementSpeed;
+        Debug.Log("Entity start called");
     }
     protected abstract void OnHeal();
     protected abstract void OnDamage();

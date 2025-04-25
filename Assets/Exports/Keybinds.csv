@@ -1,6 +1,6 @@
 Inputs,Keycodes
 Forward,W
-Backward,A
-Left,S
+Backward,S
+Left,A
 Right,D
 Jump,Space

@@ -1,9 +1,7 @@
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static UnityEngine.GraphicsBuffer;
 
 public class ScreenEffectsManager : GameObjectPool
 {
@@ -16,22 +14,20 @@ public class ScreenEffectsManager : GameObjectPool
     [SerializeField]
     private Transform quickNotifications;
 
+    //Title queue system
+    private Queue<TaskSequence> titleTextQueue = new Queue<TaskSequence>(); //Holds the queue of title text sequences
+    private bool isTitleActive = false;
+
     private TimerManager timerManager;
     private void Awake()
     {
         if (Instance == null) Instance = this;
-        timerManager = TimerManager.Instance;
     }
     private void Start()
     {
+        timerManager = TimerManager.Instance;
         screenCover.gameObject.SetActive(false);
         notification.gameObject.SetActive(false);
-    }
-    private void Update()
-    {
-        if (Input.GetKeyUp(KeyCode.P)) ScreenFade();
-        if (Input.GetKeyUp(KeyCode.O)) CreateTitleTextNotification("Test");
-        if (Input.GetKeyUp(KeyCode.I)) CreateQuickTextNotification(null, "Test", 0, 1);
     }
 
     /// <summary>
@@ -58,10 +54,37 @@ public class ScreenEffectsManager : GameObjectPool
     /// <param name="holdDuration">Duration that the fade will hold for</param>
     public void CreateTitleTextNotification(string notificationText, float fadeInDuration = 0.5f, float fadeOutDuration = 0.5f, float holdDuration = 1f)
     {
-        //Assigns text to the notification
-        notification.text = notificationText;
+        TaskSequence sequence = new TaskSequence(InstantTask.Get(() => notification.text = notificationText));
+        sequence.AddTask(FadeSequence(notification, fadeInDuration, fadeOutDuration, holdDuration));
+        titleTextQueue.Enqueue(sequence); //Adds the sequence to the queue
 
-        timerManager.CreateTaskSequence(FadeSequence(notification, fadeInDuration, fadeOutDuration, holdDuration));
+        TryRunNextNotification();
+    }
+    private void TryRunNextNotification()
+    {
+        if (isTitleActive || titleTextQueue.Count == 0) return; //If there is no notification to run, return
+
+        TaskSequence nextSequence = new TaskSequence(titleTextQueue.Dequeue()); //Get the next sequence to run
+
+        isTitleActive = true;
+
+        //Adds recursion so the queue can automatically call the next task sequence
+        nextSequence.AddTask(new InstantTask(() =>
+        {
+            isTitleActive = false;
+            TryRunNextNotification();
+        }));
+
+        timerManager.CreateTaskSequence(nextSequence); //Adds it to the task list
+    }
+
+    /// <summary>
+    /// Clears the title notification queue
+    /// </summary>
+    public void ClearTitleNotification()
+    {
+        titleTextQueue.Clear(); //Clears the queue of title text sequences
+        notification.gameObject.SetActive(false); //Disables the notification text
     }
     public void CreateQuickTextNotification(Sprite icon, string notificationText, float fadeInDuration = 0.5f, float fadeOutDuration = 0.5f, float holdDuration = 1f)
     {
