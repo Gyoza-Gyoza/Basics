@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// This script manages the audio system, allowing for the playback of different types of audio clips.
+// IMPORTANT: This script is complete but has not been tested yet 
 public class AudioSystem : GameObjectPool
 {
     public AudioSystem Instance;
@@ -10,11 +12,31 @@ public class AudioSystem : GameObjectPool
     public Dictionary<Type, List<AudioSource>> Audios
     { get { return audios; } }
 
+    private Dictionary<Type, float> audioVolumes = new Dictionary<Type, float>();
+    public Dictionary<Type, float> AudioVolumes
+    { get { return audioVolumes; } }
+
+    private float masterVolume = 1f; // Master volume for all audio sources
     private void Awake()
     {
         if (Instance == null) Instance = this;
     }
-    public void PlayAudio(AudioData audio, Vector3? location)
+    private void Update()
+    {
+        // Garbage collector for the audio sources in the dictionary
+        foreach (var audio in audios)
+        {
+            for(int i = audio.Value.Count - 1; i >= 0; i--)
+            {
+                if (!audio.Value[i].isPlaying) // Checks if the audio source is not playing
+                {
+                    ReturnObject(audio.Value[i].gameObject); // Returns the object to the pool
+                    audio.Value.Remove(audio.Value[i]); // Removes the audio source from the dictionary
+                }
+            }
+        }
+    }
+    public void PlayAudio(AudioData audio, Vector3? location = null)
     {
         // Checks if the type of audio exists inside the dictionary 
         if (!audios.ContainsKey(audio.GetType()))
@@ -23,31 +45,36 @@ public class AudioSystem : GameObjectPool
         }
 
         GameObject obj = GetObject(); // Gets an object with an attached audio source
-        obj.transform.position = location ?? Vector3.zero;
 
         AudioSource source = obj.GetComponent<AudioSource>(); // Gets a reference to the audio source from the object
 
+        // Assigns values to the audio source
         source.clip = audio.Clip;
-        source.volume = audio.Volume;
-        source.pitch = audio.Pitch;
+        source.volume = audio.Volume * masterVolume * audioVolumes[audio.GetType()];
         source.loop = audio.IsLooping;
 
+        // Assigns values to spatial audio
         if(audio is SFXAudioData audio3D)
         {
-            source.spatialize = true; 
+            obj.transform.position = location ?? Vector3.zero;
+            source.spatialBlend = 1f;
             source.minDistance = audio3D.MinDistance;
             source.maxDistance = audio3D.MaxDistance;
         }
-
-        audios[GetType()].Add(source);
-    }
-    public void AdjustMasterVolume()
-    {
         
+        audios[audio.GetType()].Add(source); //Adds the audio source to the dictionary
     }
-    public void AdjustVolumeByType(Type audioType)
+    public void AdjustMasterVolume(float volume)
     {
-        foreach()
+        masterVolume = Mathf.Clamp01(volume); // Clamps the volume between 0 and 1
+    }
+    public void AdjustVolumeByType(Type audioType, float volume)
+    {
+        audioVolumes[audioType] = Mathf.Clamp01(volume); // Clamps the volume between 0 and 1
+        foreach (AudioSource audioSource in audios[audioType])
+        {
+            audioSource.volume = audioVolumes[audioType];
+        }
     }
 }
 public abstract class AudioData

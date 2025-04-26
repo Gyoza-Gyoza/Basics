@@ -235,8 +235,8 @@ public class Wait : Task
 {
     private static Stack<Wait> waits = new Stack<Wait>();
 
-    public float Duration; //Duration of the task
-    public float ElapsedTime; //Current time elapsed
+    public float Duration; // Duration of the task
+    public float ElapsedTime; // Current time elapsed
     private Wait(float duration)
     {
         Duration = duration;
@@ -244,7 +244,7 @@ public class Wait : Task
     }
     public static Wait Get(float duration)
     {
-        if (waits.Count > 0) //Checks if there are objects in the pool 
+        if (waits.Count > 0) // Checks if there are objects in the pool 
         {
             Wait result = waits.Pop();
             result.Duration = duration;
@@ -286,7 +286,7 @@ public class InstantTask : Task
     }
     public static InstantTask Get(Action task)
     {
-        if (instantTasks.Count > 0) //Checks if there are objects in the pool 
+        if (instantTasks.Count > 0) // Checks if there are objects in the pool 
         {
             InstantTask result = instantTasks.Pop();
             result.IsActive = true;
