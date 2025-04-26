@@ -7,7 +7,7 @@ using UnityEngine;
 // IMPORTANT: This script is complete but has not been tested yet 
 public class AudioSystem : GameObjectPool
 {
-    public AudioSystem Instance;
+    public static AudioSystem Instance;
     private Dictionary<Type, List<AudioSource>> audios = new Dictionary<Type, List<AudioSource>>();
     public Dictionary<Type, List<AudioSource>> Audios
     { get { return audios; } }
@@ -19,7 +19,8 @@ public class AudioSystem : GameObjectPool
     private float masterVolume = 1f; // Master volume for all audio sources
     private void Awake()
     {
-        if (Instance == null) Instance = this;
+        if (Instance == null) Instance = this; // Ensures only one instance of AudioSystem exists
+        else Destroy(gameObject); // Destroys the object if an instance already exists
     }
     private void Update()
     {
@@ -44,33 +45,63 @@ public class AudioSystem : GameObjectPool
             audios.Add(audio.GetType(), new List<AudioSource>());
         }
 
+        // Initializes the volume for the audio type if it doesn't exist
+        if (!audioVolumes.ContainsKey(audio.GetType()))
+        {
+            audioVolumes.Add(audio.GetType(), 1f); 
+        }
+
         GameObject obj = GetObject(); // Gets an object with an attached audio source
 
         AudioSource source = obj.GetComponent<AudioSource>(); // Gets a reference to the audio source from the object
 
-        // Assigns values to the audio source
-        source.clip = audio.Clip;
-        source.volume = audio.Volume * masterVolume * audioVolumes[audio.GetType()];
-        source.loop = audio.IsLooping;
-
-        // Assigns values to spatial audio
-        if(audio is SFXAudioData audio3D)
+        if (source != null)
         {
-            obj.transform.position = location ?? Vector3.zero;
-            source.spatialBlend = 1f;
-            source.minDistance = audio3D.MinDistance;
-            source.maxDistance = audio3D.MaxDistance;
+            // Assigns values to the audio source
+            source.clip = audio.Clip;
+            source.spatialBlend = 0f;
+            source.volume = audio.Volume * masterVolume * audioVolumes[audio.GetType()];
+            source.loop = audio.IsLooping;
+
+            // Assigns values to spatial audio
+            if (audio is SFXAudioData audio3D)
+            {
+                obj.transform.position = location ?? Vector3.zero;
+                source.spatialBlend = 1f;
+                source.minDistance = audio3D.MinDistance;
+                source.maxDistance = audio3D.MaxDistance;
+            }
+
+            source.Play(); // Plays the audio source
+            audios[audio.GetType()].Add(source); //Adds the audio source to the dictionary
         }
-        
-        audios[audio.GetType()].Add(source); //Adds the audio source to the dictionary
+        else
+        {
+            Debug.LogError("Audio source Game Object requires an Audio Source component");
+        }
     }
     public void AdjustMasterVolume(float volume)
     {
         masterVolume = Mathf.Clamp01(volume); // Clamps the volume between 0 and 1
+
+        // / Adjusts the volume of all audio sources in the dictionary
+        foreach (var audio in audios)
+        {
+            foreach (AudioSource audioSource in audio.Value)
+            {
+                audioSource.volume = audioVolumes[audio.Key] * masterVolume;
+            }
+        }
     }
     public void AdjustVolumeByType(Type audioType, float volume)
     {
-        audioVolumes[audioType] = Mathf.Clamp01(volume); // Clamps the volume between 0 and 1
+        if (!audioVolumes.ContainsKey(audioType))
+        {
+            audioVolumes.Add(audioType, Mathf.Clamp01(volume)); // Initializes the volume for the audio type if it doesn't exist
+        }
+        else audioVolumes[audioType] = Mathf.Clamp01(volume); // Clamps the volume between 0 and 1
+
+        // Adjusts the volume of all audio sources of the specified type
         foreach (AudioSource audioSource in audios[audioType])
         {
             audioSource.volume = audioVolumes[audioType];

@@ -42,7 +42,8 @@ public class InputManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
+        if (Instance == null) Instance = this; // Ensures only one instance of AudioSystem exists
+        else Destroy(gameObject); // Destroys the object if an instance already exists
 
         //Tries to import saved keybindings
         if (DatabaseIO.ImportDatabase(fileName, out string[] csv)) ImportKeybinds(csv);

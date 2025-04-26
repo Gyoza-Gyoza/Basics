@@ -21,7 +21,8 @@ public class ScreenEffectsManager : GameObjectPool
     private TimerManager timerManager;
     private void Awake()
     {
-        if (Instance == null) Instance = this;
+        if (Instance == null) Instance = this; // Ensures only one instance of AudioSystem exists
+        else Destroy(gameObject); // Destroys the object if an instance already exists
     }
     private void Start()
     {
