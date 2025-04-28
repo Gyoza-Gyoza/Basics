@@ -4,15 +4,7 @@ using UnityEngine;
 
 public class CameraEffects : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    public static CameraEffects Instance;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+
 }

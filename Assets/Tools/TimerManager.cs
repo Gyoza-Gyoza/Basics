@@ -20,9 +20,13 @@ public class TimerManager : MonoBehaviour
         for (int i = tasks.Count - 1; i >= 0; i--)
         {
             if (tasks[i].IsActive) tasks[i].Tick(); //Calls the tick function of the task
-            else tasks.RemoveAt(i); //Removes the task from the list if it is inactive
+            else
+            {
+                tasks.RemoveAt(i); //Removes the task from the list if it is inactive
+            }
         }
     }
+
     /// <summary>
     /// Initializes a new timed action
     /// </summary>
@@ -31,7 +35,7 @@ public class TimerManager : MonoBehaviour
     /// <returns></returns>
     public void CreateTimedAction(float duration, Action onComplete)
     {
-        tasks.Add(TimedTask.Get(duration, onComplete));
+        tasks.Add(TimedTask.Create(duration, onComplete));
     }
 
     /// <summary>
@@ -42,7 +46,7 @@ public class TimerManager : MonoBehaviour
     /// <returns></returns>
     public void CreateTimedRoutine(float duration, Action routine)
     {
-        tasks.Add(RoutineTask.Get(duration, routine));
+        tasks.Add(RoutineTask.Create(duration, routine));
     }
 
     /// <summary>
@@ -52,8 +56,9 @@ public class TimerManager : MonoBehaviour
     /// <returns></returns>
     public void CreateTaskSequence(Task[] sequence)
     {
-        tasks.Add(new TaskSequence(sequence));
-    }public void CreateTaskSequence(TaskSequence sequence)
+        tasks.Add(TaskSequence.Create(sequence));
+    }
+    public void CreateTaskSequence(TaskSequence sequence)
     {
         tasks.Add(sequence);
     }
@@ -65,50 +70,56 @@ public abstract class Task
     public Task()
     {
         IsActive = true;
-    }
+    }    
+
     //Creates a common function that will be called each frame in the update loop
     public abstract void Tick();
 }
-
-public class TimedTask : Task
+public abstract class Task<T> : Task where T: Task<T>, new ()
 {
-    private static Stack<TimedTask> timedActions = new Stack<TimedTask>();
+    public static Stack<T> taskPool = new Stack<T>(); //Stack to hold the objects in the pool
 
+
+    public virtual Task<T> Get()
+    {
+        if(taskPool.Count > 0) //Checks if there are objects in the pool 
+        {
+            T result = taskPool.Pop();
+            result.IsActive = true;
+            return result;
+        }
+        else return null;
+    }
+    public virtual void Return()
+    {
+        IsActive = false;
+        taskPool.Push((T)this); //Returns the object to the pool
+    }
+}
+
+public class TimedTask : Task<TimedTask>
+{
     public float Duration; //Duration of the task
     public float ElapsedTime; //Current time elapsed
     public Action OnComplete;
 
-    private TimedTask(float duration, Action onComplete)
-    {
-        Duration = duration;
-        ElapsedTime = 0f;
-        OnComplete = onComplete;
-    }
-
     /// <summary>
-    /// Returns a TimedAction
+    /// Creates a TimedAction
     /// </summary>
     /// <param name="duration">Duration before action will be performed</param>
     /// <param name="onComplete">Action that will be performed after duration has passed</param>
     /// <returns></returns>
-    public static TimedTask Get(float duration, Action onComplete)
+    public static TimedTask Create(float duration, Action onComplete)
     {
-        if (timedActions.Count > 0) //Checks if there are objects in the pool 
-        {
-            TimedTask result = timedActions.Pop();
+        TimedTask result = taskPool.Pop();
 
-            result.Duration = duration;
-            result.ElapsedTime = 0f;
-            result.IsActive = true;
-            result.OnComplete = onComplete;
+        if (result == null) result = new TimedTask();
 
-            return result;
-        }
-        else return new TimedTask(duration, onComplete);
-    }
-    public void Return()
-    {
-        timedActions.Push(this);
+        result.Duration = duration;
+        result.ElapsedTime = 0f;
+        result.OnComplete = onComplete;
+
+        return result;
     }
     public override void Tick()
     {
@@ -116,53 +127,37 @@ public class TimedTask : Task
         if (ElapsedTime >= Duration)
         {
             OnComplete?.Invoke();
-            IsActive = false;
             Return();
         }
     }
 }
 
 /// <summary>
-/// Performs actions over a certain amount of time. Use Get function to get a new instance of the class.
+/// Performs actions over a certain amount of time. Use Create function to get a new instance of the class.
 /// </summary>
-public class RoutineTask : Task
+public class RoutineTask : Task<RoutineTask>
 {
-    private static Stack<RoutineTask> timedRoutines = new Stack<RoutineTask>();
-
     public float Duration; //Duration of the task
     public float ElapsedTime; //Current time elapsed
     public Action Routine;
-    private RoutineTask(float duration, Action routine)
-    {
-        Duration = duration;
-        ElapsedTime = 0f;
-        Routine = routine;
-    }
 
     /// <summary>
-    /// Returns a TimedRoutine 
+    /// Creates a TimedRoutine 
     /// </summary>
     /// <param name="duration">Duration of the routine being performed</param>
-    /// <param name="onComplete">Action that will be performed over the duration of the routine</param>
+    /// <param name="routine">Action that will be performed over the duration of the routine</param>
     /// <returns></returns>
-    public static RoutineTask Get(float duration, Action routine)
+    public static RoutineTask Create(float duration, Action routine)
     {
-        if (timedRoutines.Count > 0) //Checks if there are objects in the pool 
-        {
-            RoutineTask result = timedRoutines.Pop();
+        RoutineTask result = taskPool.Pop();
 
-            result.Duration = duration;
-            result.ElapsedTime = 0f;
-            result.IsActive = true;
-            result.Routine = routine;
+        if (result == null) result = new RoutineTask();
 
-            return result;
-        }
-        else return new RoutineTask(duration, routine);
-    }
-    public void Return()
-    {
-        timedRoutines.Push(this);
+        result.Duration = duration;
+        result.ElapsedTime = 0f;
+        result.Routine = routine;
+
+        return result;
     }
     public override void Tick()
     {
@@ -170,36 +165,48 @@ public class RoutineTask : Task
         if (ElapsedTime <= Duration) Routine?.Invoke();
         else
         {
-            IsActive = false;
             Return();
         }
+    }
+    public void Stop()
+    {
+
     }
 }
 
 /// <summary>
-/// Performs a sequence of tasks
+/// Performs a sequence of tasks. Use Create function to get a new instance of the class.
 /// </summary>
-public class TaskSequence : Task
+public class TaskSequence : Task<TaskSequence>
 {
     private Queue<Task> taskQueue = new Queue<Task>();
 
     public bool IsComplete
     { get { return taskQueue.Count == 0; } }
 
-    public TaskSequence(Task sequence) : base()
+    public static TaskSequence Create(Task sequence)
     {
-        taskQueue.Enqueue(sequence);
-        IsActive = true;
+        TaskSequence result = taskPool.Pop();
+
+        if (result == null) result = new TaskSequence();
+        result.taskQueue.Enqueue(sequence);
+        result.IsActive = true;
+
+        return result;
     }
-    public TaskSequence(Task[] sequence) : base()
+    public static TaskSequence Create(Task[] sequence)
     {
+        TaskSequence result = taskPool.Pop();
+
+        if (result == null) result = new TaskSequence();
         foreach (Task task in sequence)
         {
-            taskQueue.Enqueue(task);
+            result.taskQueue.Enqueue(task);
         }
-        IsActive = true;
-    }
+        result.IsActive = true;
 
+        return result;
+    }
     public void AddTask(Task task) => taskQueue.Enqueue(task);
     public void AddTask(Task[] task)
     {
@@ -207,11 +214,11 @@ public class TaskSequence : Task
     }
     public override void Tick()
     {
-        if(taskQueue.Count > 0)
+        if (taskQueue.Count > 0)
         {
             Task currentTask = taskQueue.Peek();
 
-            if(currentTask == null)
+            if (currentTask == null)
             {
                 taskQueue.Dequeue();
                 return;
@@ -225,79 +232,67 @@ public class TaskSequence : Task
                 if (taskQueue.Count == 0) IsActive = false;
             }
         }
+        else if (taskQueue.Count == 0) Return();
     }
 }
 
 /// <summary>
-/// Waits for a certain amount of time. Use Get function to get a new instance of the class.
+/// Waits for a certain amount of time. Use Create function to get a new instance of the class.
 /// </summary>
-public class Wait : Task
+public class Wait : Task<Wait>
 {
-    private static Stack<Wait> waits = new Stack<Wait>();
-
     public float Duration; // Duration of the task
     public float ElapsedTime; // Current time elapsed
-    private Wait(float duration)
+
+    /// <summary>
+    /// Creates a Wait
+    /// </summary>
+    /// <param name="duration">Duration of the wait</param>
+    /// <returns></returns>
+    public static Wait Create(float duration)
     {
-        Duration = duration;
-        ElapsedTime = 0f;
-    }
-    public static Wait Get(float duration)
-    {
-        if (waits.Count > 0) // Checks if there are objects in the pool 
-        {
-            Wait result = waits.Pop();
-            result.Duration = duration;
-            result.ElapsedTime = 0f;
-            result.IsActive = true;
-            return result;
-        }
-        else return new Wait(duration);
+        Wait result = taskPool.Pop();
+
+        if (result == null) result = new Wait();
+
+        result.Duration = duration;
+        result.ElapsedTime = 0f;
+        return result;
     }
     public override void Tick()
     {
         ElapsedTime += Time.deltaTime;
         if (ElapsedTime >= Duration)
         {
-            IsActive = false;
+            Return();
         }
-    }
-    public void Return()
-    {
-        waits.Push(this);
     }
 }
 
 /// <summary>
-/// Performs an action instantly. Use Get function to get a new instance of the class.
+/// Performs an action instantly. Use Create function to get a new instance of the class.
 /// </summary>
-public class InstantTask : Task
+public class InstantTask : Task<InstantTask>
 {
-    private static Stack<InstantTask> instantTasks = new Stack<InstantTask>();
     public Action OnComplete;
-    public InstantTask(Action task)
-    {
-        OnComplete = task;
-    }
     public override void Tick()
     {
         OnComplete?.Invoke();
-        IsActive = false;
+        Return();
     }
-    public static InstantTask Get(Action task)
+
+    /// <summary>
+    /// Creates an InstantTask
+    /// </summary>
+    /// <param name="task">Task to perform</param>
+    /// <returns></returns>
+    public static InstantTask Create(Action task)
     {
-        if (instantTasks.Count > 0) // Checks if there are objects in the pool 
-        {
-            InstantTask result = instantTasks.Pop();
-            result.IsActive = true;
-            result.OnComplete = task;
-            return result;
-        }
-        else return new InstantTask(task);
-    }
-    public void Return()
-    {
-        IsActive = false;
-        instantTasks.Push(this);
+        InstantTask result = taskPool.Pop();
+
+        if (result == null) result = new InstantTask();
+
+        result.OnComplete = task;
+        return result;
     }
 }
