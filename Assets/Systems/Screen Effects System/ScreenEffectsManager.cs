@@ -55,7 +55,6 @@ public class ScreenEffectsManager : GameObjectPool
     /// <param name="holdDuration">Duration that the fade will hold for</param>
     public void CreateTitleTextNotification(string notificationText, float fadeInDuration = 0.5f, float fadeOutDuration = 0.5f, float holdDuration = 1f)
     {
-        TaskSequence sequence = new TaskSequence(InstantTask.Get(() => notification.text = notificationText));
         TaskSequence sequence = TaskSequence.Create(InstantTask.Create(() => notification.text = notificationText));
         sequence.AddTask(FadeSequence(notification, fadeInDuration, fadeOutDuration, holdDuration));
         titleTextQueue.Enqueue(sequence); //Adds the sequence to the queue
