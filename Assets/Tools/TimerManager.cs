@@ -79,8 +79,7 @@ public abstract class Task<T> : Task where T: Task<T>, new ()
 {
     public static Stack<T> taskPool = new Stack<T>(); //Stack to hold the objects in the pool
 
-
-    public virtual Task<T> Get()
+    public static T Get()
     {
         if(taskPool.Count > 0) //Checks if there are objects in the pool 
         {
@@ -88,7 +87,7 @@ public abstract class Task<T> : Task where T: Task<T>, new ()
             result.IsActive = true;
             return result;
         }
-        else return null;
+        else return new T();
     }
     public virtual void Return()
     {
@@ -111,9 +110,7 @@ public class TimedTask : Task<TimedTask>
     /// <returns></returns>
     public static TimedTask Create(float duration, Action onComplete)
     {
-        TimedTask result = taskPool.Pop();
-
-        if (result == null) result = new TimedTask();
+        TimedTask result = Get();
 
         result.Duration = duration;
         result.ElapsedTime = 0f;
@@ -149,9 +146,7 @@ public class RoutineTask : Task<RoutineTask>
     /// <returns></returns>
     public static RoutineTask Create(float duration, Action routine)
     {
-        RoutineTask result = taskPool.Pop();
-
-        if (result == null) result = new RoutineTask();
+        RoutineTask result = Get();
 
         result.Duration = duration;
         result.ElapsedTime = 0f;
@@ -170,7 +165,7 @@ public class RoutineTask : Task<RoutineTask>
     }
     public void Stop()
     {
-
+        Return();
     }
 }
 
@@ -186,9 +181,8 @@ public class TaskSequence : Task<TaskSequence>
 
     public static TaskSequence Create(Task sequence)
     {
-        TaskSequence result = taskPool.Pop();
+        TaskSequence result = Get();
 
-        if (result == null) result = new TaskSequence();
         result.taskQueue.Enqueue(sequence);
         result.IsActive = true;
 
@@ -196,9 +190,11 @@ public class TaskSequence : Task<TaskSequence>
     }
     public static TaskSequence Create(Task[] sequence)
     {
-        TaskSequence result = taskPool.Pop();
+        TaskSequence result = Get();
 
-        if (result == null) result = new TaskSequence();
+
+        //if (result == null) result = new TaskSequence();
+
         foreach (Task task in sequence)
         {
             result.taskQueue.Enqueue(task);
@@ -229,10 +225,9 @@ public class TaskSequence : Task<TaskSequence>
             if (currentTask.IsActive == false)
             {
                 taskQueue.Dequeue();
-                if (taskQueue.Count == 0) IsActive = false;
+                if (taskQueue.Count == 0) Return();
             }
         }
-        else if (taskQueue.Count == 0) Return();
     }
 }
 
@@ -251,9 +246,7 @@ public class Wait : Task<Wait>
     /// <returns></returns>
     public static Wait Create(float duration)
     {
-        Wait result = taskPool.Pop();
-
-        if (result == null) result = new Wait();
+        Wait result = Get();
 
         result.Duration = duration;
         result.ElapsedTime = 0f;
@@ -288,9 +281,9 @@ public class InstantTask : Task<InstantTask>
     /// <returns></returns>
     public static InstantTask Create(Action task)
     {
-        InstantTask result = taskPool.Pop();
+        InstantTask result = Get();
 
-        if (result == null) result = new InstantTask();
+        //if (result == null) result = new InstantTask();
 
         result.OnComplete = task;
         return result;

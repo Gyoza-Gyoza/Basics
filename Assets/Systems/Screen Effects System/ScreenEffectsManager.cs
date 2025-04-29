@@ -56,6 +56,7 @@ public class ScreenEffectsManager : GameObjectPool
     public void CreateTitleTextNotification(string notificationText, float fadeInDuration = 0.5f, float fadeOutDuration = 0.5f, float holdDuration = 1f)
     {
         TaskSequence sequence = new TaskSequence(InstantTask.Get(() => notification.text = notificationText));
+        TaskSequence sequence = TaskSequence.Create(InstantTask.Create(() => notification.text = notificationText));
         sequence.AddTask(FadeSequence(notification, fadeInDuration, fadeOutDuration, holdDuration));
         titleTextQueue.Enqueue(sequence); //Adds the sequence to the queue
 
@@ -65,12 +66,12 @@ public class ScreenEffectsManager : GameObjectPool
     {
         if (isTitleActive || titleTextQueue.Count == 0) return; //If there is no notification to run, return
 
-        TaskSequence nextSequence = new TaskSequence(titleTextQueue.Dequeue()); //Get the next sequence to run
+        TaskSequence nextSequence = TaskSequence.Create(titleTextQueue.Dequeue()); //Get the next sequence to run
 
         isTitleActive = true;
 
         //Adds recursion so the queue can automatically call the next task sequence
-        nextSequence.AddTask(new InstantTask(() =>
+        nextSequence.AddTask(InstantTask.Create(() =>
         {
             isTitleActive = false;
             TryRunNextNotification();
@@ -105,22 +106,22 @@ public class ScreenEffectsManager : GameObjectPool
     {
         return new Task[]
         {
-            InstantTask.Get(() => target.gameObject.SetActive(true)),
+            InstantTask.Create(() => target.gameObject.SetActive(true)),
             CreateFadeRoutine(target, fadeInDuration, fadeOutDuration, true),
-            Wait.Get(holdDuration),
+            Wait.Create(holdDuration),
             CreateFadeRoutine(target, fadeInDuration, fadeOutDuration, false),
-            InstantTask.Get(() => target.gameObject.SetActive(false))
+            InstantTask.Create(() => target.gameObject.SetActive(false))
         };
     }
     private Task[] FadeSequence(CanvasGroup target, float fadeInDuration, float fadeOutDuration, float holdDuration)
     {
         return new Task[]
         {
-            InstantTask.Get(() => target.gameObject.SetActive(true)),
+            InstantTask.Create(() => target.gameObject.SetActive(true)),
             CreateFadeRoutine(target, fadeInDuration, fadeOutDuration, true),
-            Wait.Get(holdDuration),
+            Wait.Create(holdDuration),
             CreateFadeRoutine(target, fadeInDuration, fadeOutDuration, false),
-            InstantTask.Get(() => ReturnObject(target.gameObject))
+            InstantTask.Create(() => ReturnObject(target.gameObject))
         };
     }
     /// <summary>
@@ -150,10 +151,10 @@ public class ScreenEffectsManager : GameObjectPool
                     target.color.g,
                     target.color.b,
                     endAlpha);
-            return RoutineTask.Get(0f, null);
+            return RoutineTask.Create(0f, null);
         }
 
-        return RoutineTask.Get(duration, () =>
+        return RoutineTask.Create(duration, () =>
         {
             if (timer <= duration)
             {
@@ -189,12 +190,12 @@ public class ScreenEffectsManager : GameObjectPool
         if (duration <= 0f) //Prevent lerp issues when dividing by 0
         {
             target.alpha = endAlpha;
-            return RoutineTask.Get(0f, null);
+            return RoutineTask.Create(0f, null);
         }
 
         float timer = 0f;
 
-        return RoutineTask.Get(duration, () =>
+        return RoutineTask.Create(duration, () =>
         {
             if (timer <= duration)
             {
