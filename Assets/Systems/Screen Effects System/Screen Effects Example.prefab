@@ -216,10 +216,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da5eef305395d8142851c493cf7de1a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectPrefab: {fileID: 5169511909955152164, guid: 4d86308ba8949f24fa5d790093770a74, type: 3}
   screenCover: {fileID: 76674274138581233}
   notification: {fileID: 8833920333488631048}
   quickNotifications: {fileID: 5738418298985328574}
+  quickNotificationPrefab: {fileID: 5169511909955152164, guid: 4d86308ba8949f24fa5d790093770a74, type: 3}
 --- !u!1 &8254040089487584791
 GameObject:
   m_ObjectHideFlags: 0

@@ -4,27 +4,41 @@ using UnityEngine;
 
 // This script manages an object pool to reuse GameObjects instead of creating and destroying them frequently.
 // Use GetObject() to spawn an object at a location, and DestroyObject() to return it to the pool for reuse.
-public abstract class GameObjectPool : MonoBehaviour
+public static class GameObjectPool
 {
-    [SerializeField]
-    protected GameObject objectPrefab; // Object to spawn
+    private static Dictionary<string, Stack<GameObject>> pools = new Dictionary<string, Stack<GameObject>>();
 
-    protected Stack<GameObject> objectPool = new Stack<GameObject>(); // Stack to contain the object
-
-    public virtual GameObject GetObject() // Function to get the object
+    public static GameObject GetObject(GameObject obj)
     {
-        if(objectPool.Count > 0) // Check if there are any objects in the stack
+        if (!pools.TryGetValue(obj.name, out Stack<GameObject> pool))
         {
-            GameObject obj = objectPool.Pop(); // Get the object from the stack
-
-            obj.SetActive(true); // Set the object to active
-            return obj; // Return the object
+            pool = new Stack<GameObject>(); 
+            pools[obj.name] = pool;
         }
-        else return Instantiate(objectPrefab); // Instantiate a new object if it doesn't exist in the stack 
+
+        if (pool.Count > 0)
+        {
+            GameObject result = pool.Pop();
+            result.SetActive(true);
+            return result;
+        }
+        else
+        {
+            GameObject instantiatedResult = Object.Instantiate(obj);
+            instantiatedResult.name = obj.name;
+            return instantiatedResult;
+        }
     }
-    public virtual void ReturnObject(GameObject obj) // Function to destroy objects
+    public static void ReturnObject(GameObject obj)
     {
-        objectPool.Push(obj); // Places object back into stack 
-        obj.SetActive(false);
+        if (pools.TryGetValue(obj.name, out Stack<GameObject> pool))
+        {
+            pool.Push(obj);
+            obj.SetActive(false);
+        }
+        else
+        {
+            pools.Add(obj.name, new Stack<GameObject>());
+        }
     }
 }

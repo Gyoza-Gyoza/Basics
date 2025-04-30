@@ -3,34 +3,28 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ScreenEffectsManager : GameObjectPool
+public class ScreenEffectsManager : Singleton<ScreenEffectsManager>
 {
-    public static ScreenEffectsManager Instance;
-
     [SerializeField]
     private Image screenCover;
     [SerializeField]
     private TextMeshProUGUI notification;
     [SerializeField]
     private Transform quickNotifications;
+    [SerializeField]
+    private GameObject quickNotificationPrefab;
 
     //Title queue system
     private Queue<TaskSequence> titleTextQueue = new Queue<TaskSequence>(); //Holds the queue of title text sequences
     private bool isTitleActive = false;
 
     private TimerManager timerManager;
-    private void Awake()
-    {
-        if (Instance == null) Instance = this; // Ensures only one instance of AudioSystem exists
-        else Destroy(gameObject); // Destroys the object if an instance already exists
-    }
     private void Start()
     {
         timerManager = TimerManager.Instance;
         screenCover.gameObject.SetActive(false);
         notification.gameObject.SetActive(false);
     }
-
     /// <summary>
     /// Performs a full screen fade in and out
     /// </summary>
@@ -89,7 +83,7 @@ public class ScreenEffectsManager : GameObjectPool
     }
     public void CreateQuickTextNotification(Sprite icon, string notificationText, float fadeInDuration = 0.5f, float fadeOutDuration = 0.5f, float holdDuration = 1f)
     {
-        GameObject textNotification = GetObject(); 
+        GameObject textNotification = GameObjectPool.GetObject(quickNotificationPrefab); 
 
         textNotification.GetComponentInChildren<Image>().sprite = icon; 
         textNotification.GetComponentInChildren<TextMeshProUGUI>().text = notificationText;
@@ -120,7 +114,7 @@ public class ScreenEffectsManager : GameObjectPool
             CreateFadeRoutine(target, fadeInDuration, fadeOutDuration, true),
             Wait.Create(holdDuration),
             CreateFadeRoutine(target, fadeInDuration, fadeOutDuration, false),
-            InstantTask.Create(() => ReturnObject(target.gameObject))
+            InstantTask.Create(() => GameObjectPool.ReturnObject(target.gameObject))
         };
     }
     /// <summary>

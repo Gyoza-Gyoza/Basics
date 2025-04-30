@@ -2,28 +2,19 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TimerManager : MonoBehaviour
+public class TimerManager : Singleton<TimerManager>
 {
-    public static TimerManager Instance;
     private List<Task> tasks = new List<Task>();
     public List<Task> Tasks
     { get { return tasks; } }
 
-    private void Awake()
-    {
-        if (Instance == null) Instance = this; // Ensures only one instance of AudioSystem exists
-        else Destroy(gameObject); // Destroys the object if an instance already exists
-    }
     private void Update()
     {
         //Reverse for loop to avoid index issues when removing items from the list
         for (int i = tasks.Count - 1; i >= 0; i--)
         {
             if (tasks[i].IsActive) tasks[i].Tick(); //Calls the tick function of the task
-            else
-            {
-                tasks.RemoveAt(i); //Removes the task from the list if it is inactive
-            }
+            else tasks.RemoveAt(i); //Removes the task from the list if it is inactive
         }
     }
 
@@ -33,7 +24,7 @@ public class TimerManager : MonoBehaviour
     /// <param name="duration">Duration before action will be performed</param>
     /// <param name="onComplete">Action that will be performed after duration has passed</param>
     /// <returns></returns>
-    public void CreateTimedAction(float duration, Action onComplete)
+    public void CreateTimedTask(float duration, Action onComplete)
     {
         tasks.Add(TimedTask.Create(duration, onComplete));
     }
@@ -44,7 +35,7 @@ public class TimerManager : MonoBehaviour
     /// <param name="duration">Duration of the routine being performed</param>
     /// <param name="routine">Action that will be performed over the duration of the routine</param>
     /// <returns></returns>
-    public void CreateTimedRoutine(float duration, Action routine)
+    public void CreateRoutineTask(float duration, Action routine)
     {
         tasks.Add(RoutineTask.Create(duration, routine));
     }

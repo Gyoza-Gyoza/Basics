@@ -5,9 +5,10 @@ using UnityEngine;
 
 // This script manages the audio system, allowing for the playback of different types of audio clips.
 // IMPORTANT: This script is complete but has not been tested yet 
-public class AudioSystem : GameObjectPool
+public class AudioSystem : Singleton<AudioSystem>
 {
-    public static AudioSystem Instance;
+    [SerializeField]
+    private GameObject audioPrefab;
     private Dictionary<Type, List<AudioSource>> audios = new Dictionary<Type, List<AudioSource>>();
     public Dictionary<Type, List<AudioSource>> Audios
     { get { return audios; } }
@@ -17,11 +18,6 @@ public class AudioSystem : GameObjectPool
     { get { return audioVolumes; } }
 
     private float masterVolume = 1f; // Master volume for all audio sources
-    private void Awake()
-    {
-        if (Instance == null) Instance = this; // Ensures only one instance of AudioSystem exists
-        else Destroy(gameObject); // Destroys the object if an instance already exists
-    }
     private void Update()
     {
         // Garbage collector for the audio sources in the dictionary
@@ -31,7 +27,7 @@ public class AudioSystem : GameObjectPool
             {
                 if (!audio.Value[i].isPlaying) // Checks if the audio source is not playing
                 {
-                    ReturnObject(audio.Value[i].gameObject); // Returns the object to the pool
+                    GameObjectPool.ReturnObject(audio.Value[i].gameObject); // Returns the object to the pool
                     audio.Value.Remove(audio.Value[i]); // Removes the audio source from the dictionary
                 }
             }
@@ -51,7 +47,7 @@ public class AudioSystem : GameObjectPool
             audioVolumes.Add(audio.GetType(), 1f); 
         }
 
-        GameObject obj = GetObject(); // Gets an object with an attached audio source
+        GameObject obj = GameObjectPool.GetObject(audioPrefab); // Gets an object with an attached audio source
 
         AudioSource source = obj.GetComponent<AudioSource>(); // Gets a reference to the audio source from the object
 
