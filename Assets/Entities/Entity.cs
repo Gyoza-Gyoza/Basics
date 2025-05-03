@@ -67,7 +67,6 @@ public abstract class Entity : MonoBehaviour
         Health = maxHealth;
         Damage = initialDamage;
         MovementSpeed = initialMovementSpeed;
-        Debug.Log("Entity start called");
     }
     protected abstract void OnHeal();
     protected abstract void OnDamage();

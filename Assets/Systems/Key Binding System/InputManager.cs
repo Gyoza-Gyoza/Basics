@@ -16,13 +16,13 @@ public enum KeyInput //Contains all available inputs
     Forward,
     Backward,
     Left,
-    Right,
+    Right, 
+    Sprint,
     Jump
 }
-public class InputManager : MonoBehaviour
+public class InputManager : Singleton<InputManager>
 {
     private string fileName = "Keybinds";
-    public static InputManager Instance;
 
     private List<KeyInputSelector> keyInputSelectors = new List<KeyInputSelector>();
     public List<KeyInputSelector> KeyInputSelectors
@@ -35,20 +35,23 @@ public class InputManager : MonoBehaviour
         { KeyInput.Backward, KeyCode.S },
         { KeyInput.Left, KeyCode.A },
         { KeyInput.Right, KeyCode.D },
+        { KeyInput.Sprint, KeyCode.LeftShift},
         { KeyInput.Jump, KeyCode.Space }
     };
     public Dictionary<KeyInput, KeyCode> Keys
     { get { return keys; } }
 
-    private void Awake()
+    protected override void Awake()
     {
-        if (Instance == null) Instance = this; // Ensures only one instance of AudioSystem exists
-        else Destroy(gameObject); // Destroys the object if an instance already exists
+        base.Awake();
 
         //Tries to import saved keybindings
         if (DatabaseIO.ImportDatabase(fileName, out string[] csv)) ImportKeybinds(csv);
         //Else exports a new copy 
         else DatabaseIO.ExportDatabase(fileName, ExportKeyBinds());
+
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
     private void Update()
     {

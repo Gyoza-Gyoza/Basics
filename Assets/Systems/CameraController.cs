@@ -5,24 +5,40 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     [SerializeField]
-    private Vector3 offset;
+    private PlayerController player;
+    // Variables for controlling the camera 
+    [SerializeField]
+    private float xSensitivity = 5f, ySensitivity = 5f;
+    // Movement variables
+    private float xCursor, yCursor, upDownRotation,
+        yLookMin = -80f, yLookMax = 80f;
+
+    [SerializeField]
+    private Vector3 cameraShakeMagnitude;
 
     private GameObject target;
     private TimerManager timerManager;
-    public static CameraController Instance;
 
-    public void Awake()
-    {
-        if (Instance == null) Instance = this; // Ensures only one instance of CameraEffects exists
-        else Destroy(gameObject); // Destroys the object if an instance already exists
-    }
     private void Start()
     {
         timerManager = TimerManager.Instance;
     }
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.P)) CameraShake(1f, offset);
+        if (Input.GetKeyDown(KeyCode.P)) CameraShake(1f, cameraShakeMagnitude);
+        MouseInput();
+    }
+    private void MouseInput() //Gets the mouse position 
+    {
+        xCursor = Input.GetAxis("Mouse X") * xSensitivity; // Gets mouse X input
+        yCursor = Input.GetAxis("Mouse Y") * ySensitivity; // Gets mouse Y input
+
+        // Performs vertical rotation
+        upDownRotation += -yCursor;
+        upDownRotation = Mathf.Clamp(upDownRotation, yLookMin, yLookMax);
+        transform.localRotation = Quaternion.Euler(upDownRotation, 0f, 0f);
+
+        player.transform.Rotate(Vector3.up, xCursor); // Performs horizontal rotation
     }
     public void CameraShake(float duration, Vector2 magnitude)
     {
@@ -43,6 +59,6 @@ public class CameraController : MonoBehaviour
     }
     public Vector3 GetCameraPosition()
     {
-        return transform.position + offset;
+        return transform.position;
     }
 }

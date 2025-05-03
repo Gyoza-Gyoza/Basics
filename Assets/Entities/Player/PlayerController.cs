@@ -6,6 +6,9 @@ public class PlayerController : Entity
 {
     [SerializeField]
     private float jumpHeight = 5f;
+    [SerializeField]
+    private float sprintMultiplier = 2f;
+    private bool isSprinting = false;
     private InputManager inputManager;
     private Rigidbody rb;
     private PlayerState playerState = PlayerState.Idle;
@@ -14,6 +17,7 @@ public class PlayerController : Entity
         get { return playerState; }
         set { playerState = value; }
     }
+    private Vector3 movement;
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -22,23 +26,33 @@ public class PlayerController : Entity
     {
         base.Start();
         inputManager = InputManager.Instance;
-        Debug.Log("Player start called");
     }
     private void Update()
     {
         // Handle player input and update player state
-        HandleInput();
+        Movement();
     }
-    private void HandleInput()
+    private void Movement()
     {
-        if(Input.GetKey(inputManager.GetKey(KeyInput.Forward))) 
-            rb.MovePosition(rb.position + new Vector3(0, 0, 1) * MovementSpeed * Time.deltaTime);
-        else if(Input.GetKey(inputManager.GetKey(KeyInput.Backward))) 
-            rb.MovePosition(rb.position + new Vector3(0, 0, -1) * MovementSpeed * Time.deltaTime);
-        else if(Input.GetKey(inputManager.GetKey(KeyInput.Right))) 
-            rb.MovePosition(rb.position + new Vector3(1, 0, 0) * MovementSpeed * Time.deltaTime);
-        else if(Input.GetKey(inputManager.GetKey(KeyInput.Left))) 
-            rb.MovePosition(rb.position + new Vector3(-1, 0, 0) * MovementSpeed * Time.deltaTime);
+        // Handles the basic player movement 
+
+        movement = Vector3.zero; // Resets the movement value
+
+        // Gets each axis input
+        if (Input.GetKey(inputManager.GetKey(KeyInput.Forward))) movement.z += 1f;
+        else if (Input.GetKey(inputManager.GetKey(KeyInput.Backward))) movement.z -= 1f;
+
+        if (Input.GetKey(inputManager.GetKey(KeyInput.Right))) movement.x += 1f;
+        else if (Input.GetKey(inputManager.GetKey(KeyInput.Left))) movement.x -= 1f;
+
+        if (Input.GetKey(inputManager.GetKey(KeyInput.Sprint))) isSprinting = true;
+        else isSprinting = false;
+
+        movement = (transform.right * movement.x + transform.forward * movement.z).normalized; // Calculates the movement of each axis and normalizes it 
+
+        float movementMultiplier = isSprinting ? MovementSpeed * sprintMultiplier: MovementSpeed; // Calculates the movement speed 
+
+        rb.MovePosition(rb.position + movement * movementMultiplier * Time.deltaTime); // Moves the rigidbody of the player based on the calculated movement 
 
         if (Input.GetKeyDown(inputManager.GetKey(KeyInput.Jump))) Jump(jumpHeight);
     }
