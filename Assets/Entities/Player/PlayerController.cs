@@ -9,6 +9,14 @@ public class PlayerController : Entity
     [SerializeField]
     private float sprintMultiplier = 2f;
     private bool isSprinting = false;
+
+    [Header("Ground check variables")]
+    [SerializeField]
+    private Transform groundCheck;
+    [SerializeField]
+    private LayerMask groundLayer;
+    private bool isGrounded = false;
+
     private InputManager inputManager;
     private Rigidbody rb;
     private PlayerState playerState = PlayerState.Idle;
@@ -29,7 +37,7 @@ public class PlayerController : Entity
     }
     private void Update()
     {
-        // Handle player input and update player state
+        GroundCheck();
         Movement();
     }
     private void Movement()
@@ -54,7 +62,11 @@ public class PlayerController : Entity
 
         rb.MovePosition(rb.position + movement * movementMultiplier * Time.deltaTime); // Moves the rigidbody of the player based on the calculated movement 
 
-        if (Input.GetKeyDown(inputManager.GetKey(KeyInput.Jump))) Jump(jumpHeight);
+        if (Input.GetKeyDown(inputManager.GetKey(KeyInput.Jump)) && isGrounded) Jump(jumpHeight);
+    }
+    private void GroundCheck()
+    {
+        isGrounded = Physics.CheckBox(groundCheck.position, transform.localScale / 2, Quaternion.identity, groundLayer);
     }
     public void Jump(float amount)
     {
