@@ -55,14 +55,13 @@ public class InputManager : Singleton<InputManager>
     }
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            foreach(var kvp in keys)
-            {
-                Debug.Log(kvp.Value);
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.O)) Debug.Log(Keys.Count);
+        //if (Input.GetKeyDown(KeyCode.P))
+        //{
+        //    foreach(var kvp in keys)
+        //    {
+        //        Debug.Log(kvp.Value);
+        //    }
+        //}
     }
     private string ExportKeyBinds()
     {

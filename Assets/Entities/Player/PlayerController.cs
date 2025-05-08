@@ -53,8 +53,16 @@ public class PlayerController : Entity
         if (Input.GetKey(inputManager.GetKey(KeyInput.Right))) movement.x += 1f;
         else if (Input.GetKey(inputManager.GetKey(KeyInput.Left))) movement.x -= 1f;
 
-        if (Input.GetKey(inputManager.GetKey(KeyInput.Sprint))) isSprinting = true;
-        else isSprinting = false;
+        if (Input.GetKey(inputManager.GetKey(KeyInput.Sprint)))
+        {
+            isSprinting = true;
+            PlayerState = PlayerState.Sprinting;
+        }
+        else
+        {
+            isSprinting = false;
+            PlayerState = PlayerState.Walking;
+        }
 
         movement = (transform.right * movement.x + transform.forward * movement.z).normalized; // Calculates the movement of each axis and normalizes it 
 
@@ -93,7 +101,7 @@ public enum PlayerState
 {
     Idle,
     Walking,
-    Running,
+    Sprinting,
     Jumping,
     Falling
 }

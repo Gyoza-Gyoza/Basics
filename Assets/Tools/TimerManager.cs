@@ -35,9 +35,9 @@ public class TimerManager : Singleton<TimerManager>
     /// <param name="duration">Duration of the routine being performed</param>
     /// <param name="routine">Action that will be performed over the duration of the routine</param>
     /// <returns></returns>
-    public void CreateRoutineTask(float duration, Action routine)
+    public void CreateRoutineTask(float duration, Action routine, Action onComplete = null)
     {
-        tasks.Add(RoutineTask.Create(duration, routine));
+        tasks.Add(RoutineTask.Create(duration, routine, onComplete));
     }
 
     /// <summary>
@@ -128,6 +128,7 @@ public class RoutineTask : Task<RoutineTask>
     public float Duration; //Duration of the task
     public float ElapsedTime; //Current time elapsed
     public Action Routine;
+    public Action OnComplete;
 
     /// <summary>
     /// Creates a TimedRoutine 
@@ -135,13 +136,14 @@ public class RoutineTask : Task<RoutineTask>
     /// <param name="duration">Duration of the routine being performed</param>
     /// <param name="routine">Action that will be performed over the duration of the routine</param>
     /// <returns></returns>
-    public static RoutineTask Create(float duration, Action routine)
+    public static RoutineTask Create(float duration, Action routine, Action onComplete = null)
     {
         RoutineTask result = Get();
 
         result.Duration = duration;
         result.ElapsedTime = 0f;
         result.Routine = routine;
+        result.OnComplete = onComplete;
 
         return result;
     }
@@ -151,6 +153,7 @@ public class RoutineTask : Task<RoutineTask>
         if (ElapsedTime <= Duration) Routine?.Invoke();
         else
         {
+            OnComplete?.Invoke();
             Return();
         }
     }

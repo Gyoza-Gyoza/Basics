@@ -5,6 +5,8 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     [SerializeField]
+    private Transform testTarget;
+    [SerializeField]
     private PlayerController player;
     // Variables for controlling the camera 
     [SerializeField]
@@ -18,15 +20,24 @@ public class CameraController : MonoBehaviour
 
     private GameObject target;
     private TimerManager timerManager;
+    private bool canControl = true; 
+    public bool CanControl
+    {
+        get { return canControl; }
+        set { canControl = value; }
+    }
+    private bool cameraMoving;
 
     private void Start()
     {
         timerManager = TimerManager.Instance;
+        target = player.gameObject;
     }
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.P)) CameraShake(1f, cameraShakeMagnitude);
-        MouseInput();
+        if (Input.GetKeyDown(KeyCode.O) && !cameraMoving) SwitchTarget(1f, testTarget);
+        if (Input.GetKeyDown(KeyCode.P) && !cameraMoving) ReturnToPlayer(1f);
+        if (canControl) MouseInput();
     }
     private void MouseInput() //Gets the mouse position 
     {
@@ -51,14 +62,37 @@ public class CameraController : MonoBehaviour
     public void SwitchTarget(float duration, Transform target)
     {
         float timer = 0f;
+        canControl = false;
+        cameraMoving = true;
         timerManager.CreateRoutineTask(duration, () =>
         {
-            transform.position = Vector3.Lerp(GetCameraPosition(), target.position, timer / duration);
-            if (timer >= duration) this.target = target.gameObject;
+            timer += Time.deltaTime;
+            transform.position = Vector3.Lerp(this.target.transform.position, target.position, timer / duration);
+        }, () => 
+        {
+            this.target = target.gameObject;
+            cameraMoving = false;
         });
     }
-    public Vector3 GetCameraPosition()
+    public void ReturnToPlayer(float duration)
     {
-        return transform.position;
+        float timer = 0f;
+        cameraMoving = true;
+        timerManager.CreateRoutineTask(duration, () =>
+        {
+            timer += Time.deltaTime;
+            Debug.Log(timer);
+            transform.position = Vector3.Lerp(target.transform.position, GetCameraPosition(), timer / duration);
+        },
+        () =>
+        {
+            target = player.gameObject;
+            canControl = true;
+            cameraMoving = false;
+        });
+    }
+    public Vector3 GetCameraPosition() // Returns player position after all calculations
+    {
+        return player.transform.position;
     }
 }
